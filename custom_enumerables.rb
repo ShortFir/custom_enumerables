@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-# rubocop:disable Style/For
 # Custom Enumerables
 module Enumerable
+  # rubocop:disable Style/For
   def my_each
     return unless block_given?
 
@@ -10,6 +10,7 @@ module Enumerable
       yield(value)
     end
   end
+  # rubocop:enable Style/For
 
   def my_each_with_index
     return unless block_given?
@@ -81,33 +82,43 @@ module Enumerable
     array
   end
 
-  # first = self.first 'first element of enumerable'
-  def my_inject(accumulator = first)
+  # rubocop:disable Metrics/MethodLength
+  def my_inject(*accumulator)
     return unless block_given?
 
-    # if acc arg given, then start loop at second item...?
-    my_each do |value|
+    if accumulator.empty?
+      accumulator = first
+      array = to_a.slice(1..-1)
+    else
+      accumulator = accumulator.first
+      array = to_a
+    end
+    array.my_each do |value|
       accumulator = yield(accumulator, value)
     end
     accumulator
   end
+  # rubocop:enable Metrics/MethodLength
 end
-# rubocop:enable Style/For
+
+def multiply_els(array)
+  array.my_inject { |a, b| a * b }
+end
+
+# ############################################################
+# Very sloppy testing, it was just added to as I created the methods.
+# Probably not going to clean it up atm.
+# ############################################################
 
 numbers = [1, 2, 3, 4, 5]
 words = %w[one two three four five]
 
-# I wanted to know how this works.
-# num_intp = %W[#{numbers[0]} #{numbers[1]} #{numbers[2]} #{numbers[3]} #{numbers[4]}]
-# puts 'array interpolation'
-# num_intp.each { |value| puts "Value: #{value}" }
-
-puts '---------- each :VS: my_each ----------'
+puts '(1) ---------- each :VS: my_each ----------'
 numbers.each { |value| puts "Value: #{value}" }
 puts '--------------------'
 numbers.my_each { |value| puts "Value: #{value}" }
 
-puts '---------- each_with_index :VS: my_each_with_index ----------'
+puts '(2) ---------- each_with_index :VS: my_each_with_index ----------'
 words.each_with_index do |value, index|
   puts "Value: #{value.to_s.ljust(5)} Index: #{index}"
 end
@@ -116,14 +127,14 @@ words.my_each_with_index do |value, index|
   puts "Value: #{value.to_s.ljust(5)} Index: #{index}"
 end
 
-puts '---------- select :VS: my_select ----------'
+puts '(3) --------- select :VS: my_select ----------'
 puts(numbers.select(&:even?))
 puts(words.select { |word| word == 'one' })
 puts '--------------------'
 puts(numbers.my_select(&:even?))
 puts(words.my_select { |word| word == 'one' })
 
-puts '---------- all? :VS: my_all? ----------'
+puts '(4) ---------- all? :VS: my_all? ----------'
 puts numbers.all?(&:positive?)
 puts(words.all? { |word| word == 'one' })
 # puts numbers.all?(Numeric)
@@ -132,14 +143,14 @@ puts numbers.my_all?(&:positive?)
 puts(words.my_all? { |word| word == 'one' })
 # puts numbers.my_all?(Numeric) # Doesn't work
 
-puts '---------- any? :VS: my_any? ----------'
+puts '(5) ---------- any? :VS: my_any? ----------'
 puts(words.any? { |word| word.length < 4 })
 puts numbers.any?(&:negative?)
 puts '--------------------'
 puts(words.my_any? { |word| word.length < 4 })
 puts numbers.my_any?(&:negative?)
 
-puts '---------- none? :VS: my_none? ----------'
+puts '(6) ---------- none? :VS: my_none? ----------'
 puts(words.none? { |word| word == 'three' })
 puts(words.none? { |word| word == 'six' })
 puts(numbers.none? { |number| number > 5 })
@@ -150,7 +161,7 @@ puts(words.my_none? { |word| word == 'six' })
 puts(numbers.my_none? { |number| number > 5 })
 puts(numbers.my_none? { |number| number < 5 })
 
-puts '---------- count? :VS: my_count? ----------'
+puts '(7) ---------- count :VS: my_count ----------'
 puts(numbers.count { |number| number > 2 })
 puts numbers.count(&:even?)
 puts(words.count { |word| word.length > 3 })
@@ -159,24 +170,51 @@ puts(numbers.my_count { |number| number > 2 })
 puts numbers.my_count(&:even?)
 puts(words.my_count { |word| word.length > 3 })
 
-puts '---------- map :VS: my_map ----------'
+puts '(8) ---------- map :VS: my_map ----------'
 puts(numbers.map { |number| number * 2 })
 puts(numbers.map { |number| number * number })
-puts numbers.map # Returns Enumerator
+print 'Returns >> ', numbers.map, ' <<', "\n" # Returns Enumerator
 puts '--------------------'
 puts(numbers.my_map { |number| number * 2 })
 puts(numbers.my_map { |number| number * number })
-puts numbers.my_map # Returns nothing
+print 'Returns >> ', numbers.my_map, ' <<', "\n" # Returns nothing
 
-puts '---------- inject :VS: my_inject ----------'
+puts '(9) ---------- inject :VS: my_inject ----------'
 # puts(numbers.inject(:+))
 puts(numbers.inject { |sum, n| sum + n })
 puts(numbers.inject(10) { |sum, n| sum + n })
 puts((5..10).inject { |sum, n| sum + n })
 puts((5..10).inject(10) { |sum, n| sum + n })
+puts
+puts(numbers.inject { |sum, n| sum * n })
+puts(numbers.inject(10) { |sum, n| sum * n })
+puts((5..10).inject { |sum, n| sum * n })
+puts((5..10).inject(10) { |sum, n| sum * n })
 puts '--------------------'
 # puts(numbers.my_inject(:+))
 puts(numbers.my_inject { |sum, n| sum + n })
 puts(numbers.my_inject(10) { |sum, n| sum + n })
 puts((5..10).my_inject { |sum, n| sum + n })
 puts((5..10).my_inject(10) { |sum, n| sum + n })
+puts
+puts(numbers.my_inject { |sum, n| sum * n })
+puts(numbers.my_inject(10) { |sum, n| sum * n })
+puts((5..10).my_inject { |sum, n| sum * n })
+puts((5..10).my_inject(10) { |sum, n| sum * n })
+
+puts '(10) --------- Test my_inject with method -----------'
+print 'Testing multiply_els([2, 4, 5]) => 40 >>> '
+puts multiply_els([2, 4, 5])
+
+puts '(11) --------- Mod my_map to take proc -----------'
+a_proc = proc { |number| number * 2 }
+print 'map to take a proc', "\n"
+puts numbers.map(&a_proc)
+print 'my_map to take a proc...', "\n"
+puts numbers.my_map(&a_proc)
+print '...turns out it worked that way already.', "\n"
+
+puts '(12) ---------- Pass Proc and Block ----------'
+# puts(numbers.map(&a_proc) { |number| number * 2 })
+# puts(numbers.my_map(&a_proc) { |number| number * 2 })
+puts 'Both map and my_map throw an error in the IDE (VSCode), so cannot even run code'
